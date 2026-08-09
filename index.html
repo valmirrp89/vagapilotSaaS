@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="VagaPilot — Assistente inteligente de candidaturas. Analise vagas, destaque sua experiência real e acompanhe cada oportunidade.">
+  <title>VagaPilot | Assistente de Candidaturas</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH VIEW
+     ============================================================ -->
+<div id="view-auth">
+  <div class="auth-bg"></div>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="brand-icon">VP</div>
+      <h1>VagaPilot</h1>
+    </div>
+    <p class="auth-tagline">Candidate-se com estratégia.<br>Sem perder sua autenticidade.</p>
+
+    <!-- Login Form -->
+    <form id="auth-login-form" class="auth-form" onsubmit="return false">
+      <div class="form-group">
+        <label for="authEmail">E-mail</label>
+        <input id="authEmail" type="email" placeholder="seu@email.com" required>
+      </div>
+      <div class="form-group">
+        <label for="authPassword">Senha</label>
+        <input id="authPassword" type="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" id="loginBtn" class="btn btn-primary btn-block">Entrar</button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="auth-register-form" class="auth-form hidden" onsubmit="return false">
+      <div class="form-group">
+        <label for="authName">Nome completo</label>
+        <input id="authName" type="text" placeholder="Seu nome" required>
+      </div>
+      <div class="form-group">
+        <label for="authEmailReg">E-mail</label>
+        <input id="authEmailReg" type="email" placeholder="seu@email.com" required>
+      </div>
+      <div class="form-group">
+        <label for="authPasswordReg">Senha</label>
+        <input id="authPasswordReg" type="password" placeholder="Mínimo 6 caracteres" required>
+      </div>
+      <button type="submit" id="registerBtn" class="btn btn-primary btn-block">Criar conta</button>
+    </form>
+
+    <div class="auth-footer">
+      <span id="authToggleText">Não tem conta?</span>
+      <button id="toggleAuthMode">Cadastre-se</button>
+    </div>
+    <div class="auth-divider"><span>ou</span></div>
+    <button id="guestBtn" class="btn btn-ghost btn-block">Entrar sem conta (dados locais)</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div id="app-shell" class="app-shell hidden">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <a href="#" class="sidebar-brand">
+      <div class="brand-icon">VP</div>
+      <span>VagaPilot</span>
+    </a>
+
+    <div class="sidebar-user">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info">
+        <span class="user-name" id="userDisplayName">Usuário</span>
+        <span class="user-email" id="userDisplayEmail">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" data-view="profile">
+        <span class="nav-icon">👤</span> Meu Perfil
+      </button>
+      <button class="nav-item" data-view="analyzer">
+        <span class="nav-icon">🔍</span> Analisar Vaga
+      </button>
+      <button class="nav-item" data-view="tracker">
+        <span class="nav-icon">📋</span> Candidaturas
+      </button>
+      <button class="nav-item" data-view="settings">
+        <span class="nav-icon">⚙️</span> Configurações
+      </button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="nav-item" id="themeToggle">
+        <span class="nav-icon" id="themeIcon">🌙</span> <span id="themeLabel">Modo claro</span>
+      </button>
+      <button class="nav-item" id="logoutBtn">
+        <span class="nav-icon">🚪</span> Sair
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- ========== DASHBOARD ========== -->
+    <section id="view-dashboard" class="view active">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Bem-vindo ao seu assistente de candidaturas.</p>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon">📄</div>
+          <span class="metric-value" id="totalApps">0</span>
+          <span class="metric-label">Total de candidaturas</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🎯</div>
+          <span class="metric-value" id="avgScore">0%</span>
+          <span class="metric-label">Aderência média</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">📤</div>
+          <span class="metric-value" id="sentCount">0</span>
+          <span class="metric-label">Enviadas</span>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🤝</div>
+          <span class="metric-value" id="interviewCount">0</span>
+          <span class="metric-label">Entrevistas</span>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">INTELIGÊNCIA DE CARREIRA</p>
+              <h3>Seu perfil</h3>
+            </div>
+          </div>
+          <div class="score-card" style="border:0; padding:0; margin:0;">
+            <div class="score-ring" id="dashScoreRing" style="width:90px;height:90px;">
+              <span class="score-ring-value" id="dashResumeScore">0<small>%</small></span>
+            </div>
+            <div>
+              <h3 id="dashProfileLevel" style="margin-bottom:4px;">Perfil em análise</h3>
+              <p class="text-secondary" style="font-size:12px;">Execute a análise de perfil para detalhes.</p>
+            </div>
+          </div>
+          <div id="dashTopRoles" class="mt-2" style="font-size:12px; color:var(--text-secondary);">
+            <p>Analise seu perfil para ver os cargos ideais.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">ATIVIDADE RECENTE</p>
+              <h3>Últimas candidaturas</h3>
+            </div>
+          </div>
+          <div id="recentActivity">
+            <div class="empty-state" style="padding:24px 0;">
+              <p>Nenhuma candidatura registrada ainda.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 flex-between">
+        <button class="btn btn-primary" onclick="Router.navigate('analyzer')">🔍 Analisar nova vaga</button>
+        <button class="btn btn-ghost" onclick="Router.navigate('profile')">👤 Editar perfil</button>
+      </div>
+    </section>
+
+    <!-- ========== PROFILE ========== -->
+    <section id="view-profile" class="view">
+      <div class="page-header">
+        <h1>Meu Perfil Profissional</h1>
+        <p>Configure seus dados, palavras-chave e template de apresentação.</p>
+      </div>
+
+      <div class="two-col">
+        <!-- Left Column -->
+        <div class="stack">
+          <div class="card">
+            <div class="card-header">
+              <div><p class="eyebrow">DADOS PESSOAIS</p><h3>Informações básicas</h3></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label for="profileName">Nome completo</label><input id="profileName" placeholder="Seu nome"></div>
+              <div class="form-group"><label for="profileCity">Cidade/UF</label><input id="profileCity" placeholder="Ex: Cotia/SP"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label for="profilePhone">Telefone</label><input id="profilePhone" placeholder="(11) 99999-9999"></div>
+              <div class="form-group"><label for="profileEmail">E-mail</label><input id="profileEmail" placeholder="seu@email.com"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label for="profileArea">Área profissional</label><input id="profileArea" placeholder="Ex: Controle de Qualidade"></div>
+              <div class="form-group"><label for="profileYears">Experiência</label><input id="profileYears" placeholder="Ex: 9+ anos"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div><p class="eyebrow">CURRÍCULO</p><h3>Currículo-base</h3></div>
+              <button class="btn btn-ghost btn-sm" id="analyzeResumeBtn">Analisar currículo</button>
+            </div>
+            <label class="upload-zone" id="uploadZone" tabindex="0">
+              <input id="resumeFile" type="file" accept=".docx,.txt,.rtf">
+              <span class="upload-icon">↑</span>
+              <strong>Arraste o currículo ou clique para selecionar</strong>
+              <small>Formatos: DOCX, TXT, RTF · processamento local</small>
+            </label>
+            <div class="file-status hidden" id="fileStatus">
+              <div class="file-info">
+                <span class="file-name" id="fileName"></span>
+                <span class="file-meta" id="fileMeta"></span>
+              </div>
+              <button class="btn btn-danger btn-sm" id="removeFile">Remover</button>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label for="resumeText">Conteúdo extraído</label>
+              <textarea id="resumeText" rows="10" placeholder="Cole ou edite o conteúdo do seu currículo aqui..."></textarea>
+            </div>
+            <div class="resume-metrics">
+              <div class="resume-metric"><strong id="resumeScore">0%</strong><span>Força do perfil</span></div>
+              <div class="resume-metric"><strong id="profileYearsMetric">—</strong><span>Experiência</span></div>
+              <div class="resume-metric"><strong id="keywordMetric">0</strong><span>Competências</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="stack">
+          <div class="card">
+            <div class="card-header">
+              <div><p class="eyebrow">COMPETÊNCIAS</p><h3>Palavras-chave do perfil</h3></div>
+            </div>
+            <p class="text-secondary mb-1" style="font-size:12px;">Adicione termos que representam suas habilidades reais.</p>
+            <div class="tag-input-wrapper">
+              <input id="keywordInput" placeholder="Digitar competência...">
+              <button class="btn btn-ghost btn-sm" id="addKeywordBtn">+ Adicionar</button>
+            </div>
+            <div class="chips-container" id="keywordsList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div><p class="eyebrow">LACUNAS MONITORADAS</p><h3>Termos de lacuna</h3></div>
+            </div>
+            <p class="text-secondary mb-1" style="font-size:12px;">Termos que indicam gaps ao aparecerem na vaga.</p>
+            <div class="tag-input-wrapper">
+              <input id="gapTermInput" placeholder="Digitar termo...">
+              <button class="btn btn-ghost btn-sm" id="addGapTermBtn">+ Adicionar</button>
+            </div>
+            <div class="chips-container" id="gapTermsList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div><p class="eyebrow">APRESENTAÇÃO</p><h3>Template do Pitch</h3></div>
+            </div>
+            <p class="text-secondary mb-1" style="font-size:12px;">Use variáveis: <code>[AREA]</code>, <code>[ANOS]</code>, <code>[EMPRESA]</code>, <code>[SKILLS]</code>, <code>[FORMACAO]</code></p>
+            <div class="form-group" style="margin:0;">
+              <textarea id="pitchTemplate" rows="5" placeholder="Sou profissional da área de [AREA], com [ANOS] de experiência..."></textarea>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div><p class="eyebrow">DIAGNÓSTICO</p><h3>Análise do perfil</h3></div>
+            </div>
+            <h3 id="profileLevel" style="margin-bottom:6px; color:var(--accent);">Perfil em análise</h3>
+            <p id="profileSummary" class="text-secondary" style="font-size:13px; line-height:1.6;">Execute a análise para receber uma avaliação detalhada.</p>
+            <div class="diagnostic-columns">
+              <div><strong>Pontos fortes</strong><ul id="strengths"></ul></div>
+              <div><strong>Oportunidades</strong><ul id="improvements"></ul></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div><p class="eyebrow">CARGOS IDEAIS</p><h3>Ranking de compatibilidade</h3></div>
+            </div>
+            <div id="roleRanking" class="role-ranking"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <button class="btn btn-primary" id="saveProfileBtn">💾 Salvar perfil</button>
+      </div>
+    </section>
+
+    <!-- ========== ANALYZER ========== -->
+    <section id="view-analyzer" class="view">
+      <div class="page-header">
+        <h1>Análise de Oportunidade</h1>
+        <p>Preencha os dados da vaga e cole a descrição completa.</p>
+      </div>
+
+      <div class="two-col">
+        <!-- Left: Form -->
+        <div class="stack">
+          <div class="card">
+            <div class="form-row">
+              <div class="form-group"><label for="jobCompany">Empresa</label><input id="jobCompany" placeholder="Ex: Libbs Farmacêutica"></div>
+              <div class="form-group"><label for="jobRole">Cargo</label><input id="jobRole" placeholder="Ex: Analista de Controle de Qualidade"></div>
+            </div>
+            <div class="form-group"><label for="jobUrl">Link da vaga</label><input id="jobUrl" placeholder="https://..."></div>
+            <div class="form-group"><label for="jobDescription">Descrição da vaga</label><textarea id="jobDescription" rows="14" placeholder="Cole aqui a descrição completa da vaga..."></textarea></div>
+            <div class="flex-between">
+              <button class="btn btn-primary" id="analyzeBtn">🔍 Preparar candidatura</button>
+              <a class="btn btn-ghost hidden" id="openJobLink" target="_blank" rel="noreferrer">Abrir vaga ↗</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Results -->
+        <div class="stack">
+          <div class="card">
+            <div class="score-card">
+              <div class="score-ring" id="scoreRing">
+                <span class="score-ring-value"><b id="scoreValue">0</b><small>%</small></span>
+              </div>
+              <div>
+                <p class="eyebrow">ADERÊNCIA ESTIMADA</p>
+                <h2 id="scoreTitle">Aguardando vaga</h2>
+                <p class="score-desc">Estimativa baseada nas palavras-chave comprovadas do currículo.</p>
+              </div>
+            </div>
+
+            <div class="result-block result-success mb-2">
+              <h3>Competências encontradas <span class="count-badge" id="matchCount">0</span></h3>
+              <div class="chips-container" id="matchChips">
+                <span class="chips-empty">Cole uma descrição para começar.</span>
+              </div>
+            </div>
+
+            <div class="result-block result-warning mb-2">
+              <h3>Pontos para confirmar <span class="count-badge" id="gapCount">0</span></h3>
+              <div class="chips-container" id="gapChips">
+                <span class="chips-empty">Nenhuma lacuna identificada.</span>
+              </div>
+            </div>
+
+            <div class="pitch-card">
+              <div class="pitch-head">
+                <div>
+                  <p class="eyebrow">APRESENTAÇÃO PERSONALIZADA</p>
+                  <h3>Resposta para "Fale sobre você"</h3>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="copyPitchBtn">📋 Copiar</button>
+              </div>
+              <p class="pitch-text" id="pitchOutput">Configure seu perfil e analise uma vaga para gerar sua apresentação.</p>
+              <small class="pitch-disclaimer">Revise antes de usar. O texto nunca adiciona habilidades ausentes do seu perfil.</small>
+            </div>
+
+            <button class="btn btn-primary btn-block mt-2" id="saveAppBtn">💾 Salvar no histórico</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Hub -->
+      <div class="search-hub mt-3">
+        <div class="flex-between">
+          <div>
+            <p class="eyebrow">BUSCA DIRECIONADA</p>
+            <h3>Encontrar vagas compatíveis</h3>
+          </div>
+        </div>
+        <div class="search-controls">
+          <select id="searchRole">
+            <option>Analista de Controle de Qualidade</option>
+            <option>Analista de Laboratório Físico-Químico</option>
+            <option>Analista de Desenvolvimento Analítico</option>
+            <option>Analista de Validação Analítica</option>
+            <option>Inspetor de Qualidade</option>
+          </select>
+          <input id="searchLocation" value="Cotia SP" placeholder="Localização">
+          <button class="btn btn-primary" id="searchBtn">Gerar pesquisas</button>
+        </div>
+        <div id="searchLinks" class="search-links"></div>
+      </div>
+    </section>
+
+    <!-- ========== TRACKER ========== -->
+    <section id="view-tracker" class="view">
+      <div class="page-header">
+        <h1>Histórico de Candidaturas</h1>
+        <p>Controle oportunidades e evite inscrições duplicadas.</p>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn btn-ghost btn-sm" id="importBtn">📥 Importar</button>
+        <input type="file" id="importFile" accept=".json" class="hidden">
+        <button class="btn btn-ghost btn-sm" id="exportBtn">📤 Exportar backup</button>
+      </div>
+
+      <div id="applicationList" class="application-list"></div>
+
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <strong>Nenhuma candidatura preparada</strong>
+        <p>Analise sua primeira vaga para iniciar o acompanhamento.</p>
+      </div>
+    </section>
+
+    <!-- ========== SETTINGS ========== -->
+    <section id="view-settings" class="view">
+      <div class="page-header">
+        <h1>Configurações</h1>
+        <p>Gerencie conexões, aparência e dados.</p>
+      </div>
+
+      <div class="stack" style="max-width:600px;">
+        <div class="card settings-section">
+          <div class="card-header">
+            <div><p class="eyebrow">CONEXÃO</p><h3>Supabase (opcional)</h3></div>
+          </div>
+          <p class="text-secondary mb-2" style="font-size:12px;">Conecte ao Supabase para sincronizar dados na nuvem e permitir login com e-mail.</p>
+          <div class="form-group"><label for="supabaseUrl">URL do projeto</label><input id="supabaseUrl" placeholder="https://xxx.supabase.co"></div>
+          <div class="form-group"><label for="supabaseKey">Chave anon (pública)</label><input id="supabaseKey" placeholder="eyJhbGci..."></div>
+          <button class="btn btn-primary btn-sm" id="saveSettingsBtn">Salvar e conectar</button>
+          <div class="connection-status mt-1">
+            <span class="status-dot" id="connectionDot"></span>
+            <span id="connectionText" class="text-secondary" style="font-size:12px;">Desconectado — usando dados locais</span>
+          </div>
+        </div>
+
+        <div class="card settings-section">
+          <div class="card-header">
+            <div><p class="eyebrow">APARÊNCIA</p><h3>Tema</h3></div>
+          </div>
+          <p class="text-secondary" style="font-size:12px;">Alterne entre modo escuro e claro usando o botão na barra lateral.</p>
+        </div>
+
+        <div class="card settings-section">
+          <div class="card-header">
+            <div><p class="eyebrow">DADOS</p><h3>Gerenciar dados</h3></div>
+          </div>
+          <div class="flex-between">
+            <button class="btn btn-ghost btn-sm" id="exportAllBtn">📤 Exportar tudo (JSON)</button>
+            <button class="btn btn-danger btn-sm" id="clearDataBtn">🗑️ Limpar todos os dados</button>
+          </div>
+        </div>
+
+        <div class="card settings-section">
+          <div class="card-header">
+            <div><p class="eyebrow">AUTOMAÇÃO</p><h3>Extensão Chrome</h3></div>
+          </div>
+          <p class="text-secondary" style="font-size:12px; line-height:1.6;">
+            Instale a extensão <strong>VagaPilot Auto-Filler</strong> para preencher automaticamente formulários de candidatura em sites como Gupy, LinkedIn, Vagas.com e Indeed.
+            A extensão usa os dados do seu perfil para injetar informações nos campos dos formulários sem precisar digitar.
+          </p>
+          <div class="mt-1">
+            <a href="extension/" class="btn btn-ghost btn-sm" target="_blank">📦 Baixar extensão</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Safety Section -->
+      <div class="safety-section">
+        <p class="eyebrow">AUTOMAÇÃO RESPONSÁVEL</p>
+        <h2>Você mantém o controle.</h2>
+        <div class="safety-grid">
+          <div class="safety-item"><strong>Sem envio automático</strong>A confirmação final sempre é sua.</div>
+          <div class="safety-item"><strong>Sem competências inventadas</strong>A análise usa apenas seu perfil real.</div>
+          <div class="safety-item"><strong>Sem dados na nuvem*</strong>O histórico pode ficar apenas no seu dispositivo. *Salvo se conectar ao Supabase.</div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Modal Overlay -->
+<div id="modalOverlay" class="modal-overlay hidden">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
