@@ -1087,6 +1087,44 @@ var Analyzer = {
         '<strong>' + l[2] + ' ' + l[0] + '</strong>' +
         '<span>Abrir pesquisa avançada ↗</span></a>';
     }).join('');
+
+    this.fetchLiveJobs(role);
+  },
+
+  fetchLiveJobs: async function(role) {
+    var feed = $('liveJobsFeed');
+    if (!feed) return;
+    
+    feed.innerHTML = '<div class="empty-state" style="padding: 24px 0;"><p>⏳ Buscando vagas remotas em tempo real...</p></div>';
+    
+    try {
+      // Use Remotive API for remote jobs matching the role
+      var url = 'https://remotive.com/api/remote-jobs?search=' + encodeURIComponent(role) + '&limit=6';
+      var response = await fetch(url);
+      var data = await response.json();
+      
+      if (data && data.jobs && data.jobs.length > 0) {
+        var html = data.jobs.slice(0, 6).map(function(job) {
+          return '<div class="live-job-card">' +
+            '<div>' +
+              '<div class="live-job-title">' + escapeHtml(job.title) + '</div>' +
+              '<div class="live-job-meta">' +
+                '<span>🏢 <strong>' + escapeHtml(job.company_name) + '</strong></span>' +
+                '<span>🌍 ' + escapeHtml(job.candidate_required_location) + '</span>' +
+                (job.salary ? '<span>💰 ' + escapeHtml(job.salary) + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+            '<a href="' + escapeHtml(job.url) + '" target="_blank" rel="noreferrer" class="btn btn-primary btn-sm" style="text-decoration:none;">Aplicar agora ↗</a>' +
+          '</div>';
+        }).join('');
+        
+        feed.innerHTML = html;
+      } else {
+        feed.innerHTML = '<div class="empty-state" style="padding: 24px 0;"><p>Nenhuma vaga remota encontrada para "' + escapeHtml(role) + '" neste momento.</p></div>';
+      }
+    } catch(e) {
+      feed.innerHTML = '<div class="empty-state" style="padding: 24px 0;"><p>Erro ao carregar vagas. Tente novamente mais tarde.</p></div>';
+    }
   }
 };
 
