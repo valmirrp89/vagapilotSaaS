@@ -377,25 +377,47 @@
       </div>
 
       <!-- Search Hub -->
+      <!-- Search Hub -->
       <div class="search-hub mt-3">
         <div class="flex-between">
           <div>
-            <p class="eyebrow">BUSCA DIRECIONADA</p>
-            <h3>Encontrar vagas compatíveis</h3>
+            <p class="eyebrow">INTELIGÊNCIA DE BUSCA</p>
+            <h3>Busca Avançada (X-Ray & Boolean)</h3>
           </div>
         </div>
-        <div class="search-controls">
-          <select id="searchRole">
-            <option>Analista de Controle de Qualidade</option>
-            <option>Analista de Laboratório Físico-Químico</option>
-            <option>Analista de Desenvolvimento Analítico</option>
-            <option>Analista de Validação Analítica</option>
-            <option>Inspetor de Qualidade</option>
-          </select>
-          <input id="searchLocation" value="Cotia SP" placeholder="Localização">
-          <button class="btn btn-primary" id="searchBtn">Gerar pesquisas</button>
+        <p class="text-secondary mb-2" style="font-size:12px;">O VagaPilot constrói pesquisas matemáticas complexas para encontrar vagas ocultas e altamente compatíveis com seu perfil no Google e LinkedIn.</p>
+        
+        <div class="search-controls-advanced">
+          <div class="form-row">
+            <div class="form-group" style="flex:2; margin:0">
+              <label for="searchRole">Cargo Alvo</label>
+              <select id="searchRole">
+                <option>Analista de Controle de Qualidade</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1; margin:0">
+              <label for="searchLocation">Localização</label>
+              <input id="searchLocation" value="São Paulo" placeholder="Ex: São Paulo">
+            </div>
+          </div>
+          
+          <div class="search-filters mt-2">
+            <label class="toggle-switch">
+              <input type="checkbox" id="searchUseKeywords" checked>
+              <span class="slider"></span>
+              <span class="toggle-label">Obrigar que a vaga exija minhas competências (Top 5)</span>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="searchRemote">
+              <span class="slider"></span>
+              <span class="toggle-label">Vagas 100% Remotas</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary mt-2" id="searchBtn" style="width:100%">⚡ Gerar Links de Busca Avançada</button>
         </div>
-        <div id="searchLinks" class="search-links"></div>
+        
+        <div id="searchLinks" class="search-links-advanced mt-2"></div>
       </div>
     </section>
 

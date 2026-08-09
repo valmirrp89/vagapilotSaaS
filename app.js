@@ -1045,24 +1045,47 @@ var Analyzer = {
   },
 
   generateSearch: function() {
-    var role = $('searchRole').value;
+    var role = $('searchRole').value || 'Profissional';
     var loc = $('searchLocation').value.trim();
-    var simple = encodeURIComponent(role);
-    var where = encodeURIComponent(loc);
-    var slug = norm(role).replace(/\s+/g, '-');
+    var useKeywords = $('searchUseKeywords').checked;
+    var remote = $('searchRemote').checked;
 
-    var links = [
-      ['Vagas.com', 'https://www.vagas.com.br/vagas-de-' + slug, '🔵'],
-      ['Gupy', 'https://portal.gupy.io/job-search/term=' + simple, '🟢'],
-      ['LinkedIn', 'https://www.linkedin.com/jobs/search/?keywords=' + simple + '&location=' + where, '🔷'],
-      ['Indeed', 'https://br.indeed.com/jobs?q=' + simple + '&l=' + where, '🟣'],
-      ['Google', 'https://www.google.com/search?q=' + encodeURIComponent(role + ' ' + loc + ' vaga'), '🔍']
-    ];
+    var keywords = [];
+    if (useKeywords && VP.profile.keywords && VP.profile.keywords.length > 0) {
+      keywords = VP.profile.keywords.slice(0, 5).map(function(k) { return '"' + k + '"'; });
+    }
+
+    var keywordString = keywords.length ? ' AND (' + keywords.join(' OR ') + ')' : '';
+    var remoteString = remote ? ' AND (remoto OR remote OR "home office")' : '';
+    var locationString = loc && !remote ? ' AND "' + loc + '"' : '';
+
+    var links = [];
+
+    // 1. Gupy X-Ray (Google)
+    var gupyQuery = 'site:gupy.io/job "' + role + '"' + keywordString + locationString + remoteString;
+    links.push(['Gupy (X-Ray)', 'https://www.google.com/search?q=' + encodeURIComponent(gupyQuery), '🟢']);
+
+    // 2. ATS Globais X-Ray (Google)
+    var atsQuery = '(site:jobs.lever.co OR site:boards.greenhouse.io OR site:apply.workable.com) "' + role + '"' + keywordString + locationString + remoteString;
+    links.push(['ATS Globais (X-Ray)', 'https://www.google.com/search?q=' + encodeURIComponent(atsQuery), '🌐']);
+
+    // 3. LinkedIn Boolean
+    var liKeywords = '"' + role + '"' + keywordString + remoteString;
+    var liLoc = remote ? 'Brazil' : loc;
+    links.push(['LinkedIn Boolean', 'https://www.linkedin.com/jobs/search/?keywords=' + encodeURIComponent(liKeywords) + (liLoc ? '&location=' + encodeURIComponent(liLoc) : '') + (remote ? '&f_WT=2' : ''), '🔷']);
+
+    // 4. Vagas.com (Native)
+    var slug = norm(role).replace(/\s+/g, '-');
+    links.push(['Vagas.com', 'https://www.vagas.com.br/vagas-de-' + slug + (loc && !remote ? '/' + norm(loc).replace(/\s+/g, '-') : ''), '🔵']);
+
+    // 5. Indeed (Native)
+    var indeedQuery = '"' + role + '"' + (keywords.length ? ' ' + keywords.map(function(k){return k.replace(/"/g,'');}).join(' ') : '') + (remote ? ' remoto' : '');
+    links.push(['Indeed', 'https://br.indeed.com/jobs?q=' + encodeURIComponent(indeedQuery) + (loc && !remote ? '&l=' + encodeURIComponent(loc) : ''), '🟣']);
 
     $('searchLinks').innerHTML = links.map(function(l) {
       return '<a class="search-link" href="' + l[1] + '" target="_blank" rel="noreferrer">' +
         '<strong>' + l[2] + ' ' + l[0] + '</strong>' +
-        '<span>Abrir pesquisa ↗</span></a>';
+        '<span>Abrir pesquisa avançada ↗</span></a>';
     }).join('');
   }
 };
